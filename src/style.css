@@ -1,0 +1,42 @@
+input {
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border: solid 1px currentcolor;
+}
+
+input:disabled {
+  background-color: #eeeeee;
+}
+
+button {
+  border-radius: 0.25rem;
+  border: solid 1px currentcolor;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+
+button.primary {
+  border-color: #444444;
+  background-color: #444444;
+  color: #ffffff;
+}
+
+button.primary:hover {
+  border-color: #222222;
+  background-color: #222222;
+}
+
+label.fill {
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: stretch;
+  margin: 1rem 0;
+  gap: 0.25rem;
+}
+
+label.checkbox.fill {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: stretch;
+  gap: 1em;
+}
