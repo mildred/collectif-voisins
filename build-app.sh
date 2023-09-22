@@ -25,7 +25,7 @@ git_manifest(){
   git -c core.quotePath=0 ls-tree --format='%(objectname) %(path)' -r HEAD
 }
 
-hugo
+hugo || exit 1
 
 if $dev; then
 

@@ -46,7 +46,7 @@
 
   {#if results.length > 0}
     {#each results as res}
-      <a href="#/c={res.citycode}-{res.city}/" class="city">
+      <a href="#/c/{res.citycode}-{res.city}/" class="city">
         <div><strong>{res.city}</strong>, {res.postcode}</div>
         <em>{res.context}</em>
       </a>

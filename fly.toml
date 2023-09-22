@@ -1,0 +1,26 @@
+# fly.toml app configuration file generated for collectif-voisins on 2023-09-21T00:09:43+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "collectif-voisins"
+primary_region = "cdg"
+
+[build]
+
+[http_service]
+  internal_port = 80
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[mounts]
+  source = "srv"
+  destination = "/srv"
+
+[env]
+  SMTP_ADDRESS = "ssl0.ovh.net:587" 
+  SMTP_USER = "postmaster@collectif-voisins.fr"
+  SMTP_SENDER = "postmaster@collectif-voisins.fr"

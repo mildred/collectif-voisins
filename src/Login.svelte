@@ -1,9 +1,9 @@
 <script>
   // vim: ft=html
   import {Route} from 'tinro';
-  import {debounce, disputatio_guid} from './utils.js'
   import {session} from './stores.js'
   import Posts from './Posts.svelte'
+  import Modal from './Modal.svelte'
   import * as mdi from '@mdi/js';
   import SvgIcon from '@jamescoyle/svelte-icon';
   import { BarLoader } from 'svelte-loading-spinners';
@@ -30,7 +30,7 @@
     req.set("email", email.value)
     req.set("email_subject_template", "Votre code d'accès: {code}")
     req.set("email_body_template",
-      "Votre code d'accès:\n\n" +
+      "Votre code de connexion:\n\n" +
       "\t{code}\n\n" +
       "-- \n" +
       "Ne pas répondre à ce message automatique")
@@ -96,37 +96,6 @@
   button.login:hover {
     background-color: #ccc;
   }
-
-  .backdrop {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: black;
-    opacity: 0.25;
-  }
-
-  .dialog-container {
-    position: absolute;
-    left: 0;
-    top: 0;
-    min-height: 100vh;
-    width: 100vw;
-    display: flex;
-    flex-flow: column nowrap;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .dialog {
-    margin: 5rem;
-    padding: 1rem 2rem;
-    background-color: white;
-    width: min(90vw, 40rem);
-    border: solid thin black;
-    border-radius: 0.25rem;
-  }
   
   p {
   text-align: justify;
@@ -143,44 +112,39 @@
   </button>
 {/if}
 
-{#if login_started}
-  <div class="backdrop" on:click={cancel_login}></div>
-  <div class="dialog-container">
-    <div class="dialog">
-      <h1>Connexion</h1>
-      <p>Si vous avez déjà un compte, merci d'inscrire votre adresse e-mail pour
-      vous connecter. Si vous n'avez pas de compte, en inscrivant votre e-mail
-      vous recevrez un code d'accès pour créer votre compte et vous connecter.</p>
-      <form on:submit={continue_login}>
-        <label class="fill">
-          <strong>E-mail</strong>
-          <input name="email" type="email" bind:this={email} required
-          pattern=".*@.*" disabled={login_ask_code} />
-        </label>
-        {#if !login_ask_code}
-          <label class="checkbox fill">
-            <input type="checkbox" bind:value={already_have_a_code} />
-            <p>J'ai déjà un code d'accès</p>
-          </label>
-        {:else}
-          {#if !already_have_a_code}
-            <p>Un code d'accès vous a été envoyé par e-mail, merci de le
-            recopier ci-dessous.</p>
-          {/if}
-          <label class="fill">
-            <strong>Code d'accès</strong>
-            <input name="otp" type="number" bind:this={code} required
-            pattern="[0-9]*" />
-          </label>
-        {/if}
-        {#if login_spinner}
-          <center><BarLoader/></center>
-        {/if}
-        <p>
-          <button class="primary" type="submit">Se connecter</button>
-          <button class="secondary" on:click={cancel_login}>Annuler</button>
-        </p>
-      </form>
-    </div>
-  </div>
-{/if}
+<Modal bind:show={login_started} on:close={cancel_login}>
+  <h1>Connexion</h1>
+  <p>Si vous avez déjà un compte, merci d'inscrire votre adresse e-mail pour
+  vous connecter. Si vous n'avez pas de compte, en inscrivant votre e-mail
+  vous recevrez un code d'accès pour créer votre compte et vous connecter.</p>
+  <form on:submit={continue_login}>
+    <label class="fill">
+      <strong>E-mail</strong>
+      <input name="email" type="email" bind:this={email} required
+      pattern=".*@.*" disabled={login_ask_code} />
+    </label>
+    {#if !login_ask_code}
+      <label class="checkbox fill">
+        <input type="checkbox" bind:value={already_have_a_code} />
+        <p>J'ai déjà un code d'accès</p>
+      </label>
+    {:else}
+      {#if !already_have_a_code}
+        <p>Un code d'accès vous a été envoyé par e-mail, merci de le
+        recopier ci-dessous.</p>
+      {/if}
+      <label class="fill">
+        <strong>Code d'accès</strong>
+        <input name="otp" type="number" bind:this={code} required
+        pattern="[0-9]*" />
+      </label>
+    {/if}
+    {#if login_spinner}
+      <center><BarLoader/></center>
+    {/if}
+    <p>
+      <button class="primary" type="submit">Se connecter</button>
+      <button class="secondary" on:click={cancel_login}>Annuler</button>
+    </p>
+  </form>
+</Modal>

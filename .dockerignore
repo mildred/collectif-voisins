@@ -1,0 +1,11 @@
+# flyctl launch added from .gitignore
+public
+resources/_gen
+*.lock
+
+node_modules
+dist
+vite-public
+src/dist
+MANIFEST.git
+fly.toml

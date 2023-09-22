@@ -1,0 +1,6 @@
+default:
+  - route: "^/.well-known/(.*)"
+    dest: "http://127.0.0.1:8080/.well-known/$1"
+  - route: "^/"
+    dest: "/usr/share/assets/"
+    assets: true

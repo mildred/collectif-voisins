@@ -7,6 +7,7 @@
 // ---------
 // 2023-05-05: start this changelog, store.js taken from webmsg-webmail project
 // 2023-09-20: export fancy as store
+// 2023-09-20: allow to restart a store
 //
 
 import { readable, writable, derived as derived_orig, get } from 'svelte/store';
@@ -115,8 +116,7 @@ export function fancy(def_value, start) {
   const unsubscribes = []
   let   countdown    = 1000 // recursivity protection
 
-
-  const store = writable(def_value, (set) => {
+  function start_store(set) {
     starting = true
     // countdown = 1000
     for(const start of starts) {
@@ -129,15 +129,29 @@ export function fancy(def_value, start) {
     // iteration, it will be called.
     started  = true
     starting = false
+  }
 
-    return unsubscribe
-    function unsubscribe() {
-      started = false
-      while(unsubscribes.length > 0) {
-        call_unsubscribe(unsubscribes.pop())
-      }
+  function stop_store() {
+    started = false
+    while(unsubscribes.length > 0) {
+      call_unsubscribe(unsubscribes.pop())
     }
+  }
+
+  const store = writable(def_value, (set) => {
+    start_store(set)
+    return stop_store
   })
+
+  store.restart = function() {
+    if (starting) return // Do not handle starting cancelation
+
+    // Stop store
+    stop_store()
+
+    // Restart store
+    start_store(store.set.bind(store))
+  }
 
   store.init = function(cb) {
     start = (set) => {

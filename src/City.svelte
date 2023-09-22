@@ -1,27 +1,39 @@
 <script>
   // vim: ft=html
   import {Route} from 'tinro';
-  import {debounce, disputatio_guid} from './utils.js'
-  import {async_derived} from './utils/store.js'
+  import {debounce} from './utils.js'
+  import {store} from './utils/store.js'
   import Login from './Login.svelte'
   import Posts from './Posts.svelte'
+  import NewTopic from './NewTopic.svelte'
   import * as mdi from '@mdi/js';
   import SvgIcon from '@jamescoyle/svelte-icon';
   import { BarLoader } from 'svelte-loading-spinners';
+  import { guid, city_public_group} from './disputatio.js'
 
 
   export let code;
   export let name;
 
-  let root_guid = async_derived(null, async () => await disputatio_guid({
-    t: 'group-item',
-    n: name,
-    gt: 3,
-    ud: `collectif-voisins:insee:${code}`,
-    ow: 1,
-    s: 1,
-    m: []
-  }))
+  let refresh = 0
+
+  let group = city_public_group(code, name);
+  $: group = city_public_group(code, name)
+
+  let root_guid = store(null).init(async ($root_guid, update) => {
+    update.set(await guid(group))
+  })
+
+  async function create_group() {
+    console.log("Creating group %s...", $root_guid, group)
+    let res = await fetch(`/.well-known/disputatio/g/`, {
+      method: 'POST',
+      body: JSON.stringify(group)
+    })
+    let json = await res.json()
+    console.log("Created group", json)
+    refresh = (refresh + 1) % 8
+  }
 
 </script>
 
@@ -61,18 +73,29 @@
   <Route firstmatch let:meta>
   
     {@const prefix = meta.match}
+    {#key refresh}
+
+    <Route path="/r/new/" let:meta>
+      <center>
+        <a href="#{prefix}">Revenir aux sujets</a>
+      </center>
+      <NewTopic root_guid={$root_guid} url_prefix={prefix} />
+    </Route>
 
     <Route path="/r/:reference/*" let:meta>
       <center>
         <a href="#{prefix}">Revenir aux sujets</a>
       </center>
       <Posts root_guid={$root_guid} ref_guid={meta.params.reference}
-             url_prefix={prefix} />
+             url_prefix={prefix} on:group_missing={create_group} />
     </Route>
 
     <Route>
-      <Posts root_guid={$root_guid} url_prefix={prefix} />
+      <Posts root_guid={$root_guid} url_prefix={prefix} on:group_missing={create_group} />
     </Route>
+
+    {/key}
+
   </Route>
 {/if}
 
