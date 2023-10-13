@@ -8,7 +8,7 @@ RUN export DEBIAN_FRONTEND=noninteractive; \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-RUN : commit 869dd69 && \
+RUN : commit a4bb756 && \
     git clone https://github.com/mildred/disputatio.nim . && \
     nimble install -y -d && \
     nimble c -y -d:version="$(git describe --always)" src/disputatio

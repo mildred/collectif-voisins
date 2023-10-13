@@ -7,6 +7,8 @@
   export let group_guid
   export let article_guid
 
+  let open = false;
+
   async function vote(params) {
     let res = await fetch(`/.well-known/disputatio/g:${group_guid}/a:${article_guid}/vote/`, {
       method: 'POST',
@@ -27,6 +29,7 @@
       return
     }
     pts = json.score
+    open = false;
   }
 
   function promote() {
@@ -39,7 +42,7 @@
 </script>
 
 <span class="main">
-<Popover overlayColor='rgba(1,1,1,0)'>
+  <Popover overlayColor='rgba(1,1,1,0)' bind:open={open}>
   <span class="pts" slot="target">{pts} pts</span>
   <div slot="content" class="popover-content">
     <div><a href="#" on:click|preventDefault={promote}>promouvoir</a></div>

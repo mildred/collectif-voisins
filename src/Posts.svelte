@@ -7,6 +7,7 @@
   export let pts
   import Join from './Join.svelte'
   import ArtPts from './ArtPts.svelte'
+  import ArtNewReaction from './ArtNewReaction.svelte'
   import {async_derived, store} from './utils/store.js'
   import {disputatio_query, parse_julian} from './utils.js'
   import {session} from './stores.js'
@@ -25,21 +26,36 @@
   let comment_editor
   let comment_editor_key = 1
 
+  function join_reactions(reacts) {
+    let r = JSON.parse(reacts)
+    return Object.values(r).reduce((res, val) => {
+      res[val] ||= 0
+      res[val]++
+      return res
+    }, {})
+  }
+
   const ref_topic = store(null).init(async ($ref_topic, update) => {
     if (!ref_guid) return update.set({})
 
-    const guid = 0, timestamp = 1, style = 2, text = 3, p_guid = 4, nick = 5, score = 6
+    const guid = 0, timestamp = 1, style = 2, text = 3, p_guid = 4, nick = 5,
+          score = 6, reactions = 7
     let { rows } = await disputatio_query(`
-      SELECT  art.guid, art.timestamp, par.style, par.text, par.guid, gm.nickname, s.score
+      SELECT  art.guid, art.timestamp, par.style, par.text, par.guid,
+              gm.nickname, s.score,
+              json_group_object(rpar.id || '/' || react.group_member_id, rpar.text) reactions
       FROM    paragraph par
               JOIN patch_item pi ON pi.paragraph_id = par.id
               JOIN patch pp ON pp.id = pi.patch_id
               JOIN article art ON art.patch_id = pp.id
               JOIN article_score s ON s.article_id = art.id
               JOIN group_member gm ON (gm.group_item_id, gm.local_id) = (art.group_id, art.group_member_id)
+              JOIN article react ON react.kind = 'reaction' AND react.reply_guid = art.guid
+              JOIN patch_item rpi ON rpi.patch_id = react.patch_id AND rpi.rank = 1
+              JOIN paragraph rpar ON rpi.paragraph_id = rpar.id
       WHERE   s.group_guid = '${root_guid}'
               AND art.guid ${ ref_guid ? `= '${ref_guid}'` : 'IS NULL'}
-      ORDER BY timestamp DESC, pi.rank ASC
+      ORDER BY art.timestamp DESC, pi.rank ASC
     `)
 
     let art = {
@@ -52,6 +68,7 @@
       art.date = parse_julian(row[timestamp]).date,
       art.nick = row[nick]
       art.score = row[score]
+      art.reactions = join_reactions(row[reactions])
       if (art.title == null) art.title = row[text]
       art.paragraphs.push([row[style], row[text], row[p_guid]])
     }
@@ -60,9 +77,11 @@
   })
 
   const topics = store(null).init(async ($topics, update) => {
-    const guid = 0, timestamp = 1, style = 2, text = 3, p_guid = 4, nick = 5, score = 6
+    const guid = 0, timestamp = 1, style = 2, text = 3, p_guid = 4, nick = 5,
+      score = 6, reactions = 7
     let { rows } = await disputatio_query(`
-      SELECT  art.guid, art.timestamp, par.style, par.text, par.guid, gm.nickname, s.score
+      SELECT  art.guid, art.timestamp, par.style, par.text, par.guid,
+              gm.nickname, s.score, json_group_object(rpar.id || '/' || react.group_member_id, rpar.text) reactions
       FROM    paragraph par
               JOIN patch_item pi ON pi.paragraph_id = par.id
               JOIN patch pp ON pp.id = pi.patch_id
@@ -71,11 +90,14 @@
               JOIN group_member gm ON (gm.group_item_id, gm.local_id) = (art.group_id, art.group_member_id)
               -- JOIN patch_item pi1 ON pi1.patch_id = pp.id AND pi1.rank = 1
               -- JOIN paragraph par1 ON par1.id = pi1.paragraph_id
+              JOIN article react ON react.kind = 'reaction' AND react.reply_guid = art.guid AND react.group_guid = art.group_guid
+              JOIN patch_item rpi ON rpi.patch_id = react.patch_id AND rpi.rank = 1
+              JOIN paragraph rpar ON rpi.paragraph_id = rpar.id
       WHERE   s.group_guid = '${root_guid}'
               AND art.reply_guid ${ ref_guid ? `= '${ref_guid}'` : 'IS NULL'}
               AND art.kind = 'topic'
               -- AND par1.style = '+h1'
-      ORDER BY timestamp DESC, pi.rank ASC
+      ORDER BY art.timestamp DESC, pi.rank ASC
     `)
 
     let res = []
@@ -91,6 +113,7 @@
           date: parse_julian(row[timestamp]).date,
           nick: row[nick],
           score: row[score],
+          reactions: join_reactions(row[reactions]),
           paragraphs: []
         }
         res.push(art)
@@ -233,7 +256,7 @@
 
   function open_topic(e) {
     const topic = e.target.closest('article.topic')
-    if (e.target.closest('.metadata') || !topic) return;
+    if (e.target.closest('.metadata') || e.target.closest('.metadata-reactions') || !topic) return;
 
     topic.querySelector('a.open-topic')?.click()
   }
@@ -294,6 +317,9 @@
       {@html to_html(topic.paragraphs)}
       <p><a href="#{url_prefix}/r/{topic.guid}/" class="open-topic"><SvgIcon type='mdi' path={mdi.mdiArrowRightBold} /></a></p>
       <p class="topic metadata-nick">—&nbsp;{topic.nick}</p>
+      <p class="topic metadata-reactions">
+        <ArtNewReaction group_guid={root_guid} ref_guid={topic.guid} reactions={topic.reactions} />
+      </p>
       <p class="topic metadata">
         {format_date_time(topic.timestamp)} |
         <ArtPts pts={topic.score} group_guid={root_guid} article_guid={topic.guid} />
@@ -464,11 +490,17 @@
     float: left;
   }
 
+  .topic.metadata-reactions {
+    margin: 0 0 0 1em;
+    font-size: 0.9em;
+    float: left;
+  }
+
   .comment.metadata, .comment.metadata-time {
     color: #aaaaaa;
   }
 
-  .topic.metadata, .topic.metadata-nick {
+  .topic.metadata, .topic.metadata-nick, .topic.metadata-reactions {
     color: #888888;
   }
 

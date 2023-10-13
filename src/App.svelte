@@ -31,8 +31,7 @@
 <hr/>
 <p>TODO</p>
 <ul>
-  <li>Clic sur les points d'un topic/commentaire avec deux actions : "promouvoir" ou "cacher"
-  qui correspond à un vote positif ou négatif.</li>
+  <li>Gérer le logout et l;'expiration des sessions.</li>
   <li>Cacher les topics jusqu'à ce qu'une tierce personne vote pour eux</li>
   <li>Modifier le default score de groupe pour être à 0 (comme ça un
     topic/commentaire commence avec 1pts et non pas 2pts</li>
@@ -72,4 +71,7 @@
   <li>Lors de l'entrée dans le groupe de modération collective, indiquer aux
     futus membres qu'ils seront légalement tenus collectivement responsable de la
     modération du contenu.</li>
+  <li>Permettre à un groupe de référencer d'autres groupes (purement
+    informatif). Cela permet à l'interface utilisateur de présenter les posts de
+    tous ces groupes de références comme contenu à modérer</li>
 </ul>
