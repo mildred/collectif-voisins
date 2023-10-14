@@ -33,11 +33,11 @@
   }
 
   function promote() {
-    vote({vote_inc: 1})
+    vote({score_inc: 1})
   }
 
   function demote() {
-    vote({vote_dec: 1})
+    vote({score_dec: 1})
   }
 </script>
 

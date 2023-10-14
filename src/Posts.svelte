@@ -7,7 +7,8 @@
   export let pts
   import Join from './Join.svelte'
   import ArtPts from './ArtPts.svelte'
-  import ArtNewReaction from './ArtNewReaction.svelte'
+  import ArtReaction from './ArtReaction.svelte'
+  import ArtVote from './ArtVote.svelte'
   import {async_derived, store} from './utils/store.js'
   import {disputatio_query, parse_julian} from './utils.js'
   import {session} from './stores.js'
@@ -26,15 +27,6 @@
   let comment_editor
   let comment_editor_key = 1
 
-  function join_reactions(reacts) {
-    let r = JSON.parse(reacts)
-    return Object.values(r).reduce((res, val) => {
-      res[val] ||= 0
-      res[val]++
-      return res
-    }, {})
-  }
-
   const ref_topic = store(null).init(async ($ref_topic, update) => {
     if (!ref_guid) return update.set({})
 
@@ -43,18 +35,22 @@
     let { rows } = await disputatio_query(`
       SELECT  art.guid, art.timestamp, par.style, par.text, par.guid,
               gm.nickname, s.score,
-              json_group_object(rpar.id || '/' || react.group_member_id, rpar.text) reactions
+              json_group_array(json_object(
+                'id', react.guid, 'react', rpar.text, 'kind', react.kind,
+                'member', rs.member_id, 'score', rs.score - rs.default_score)) reactions
       FROM    paragraph par
               JOIN patch_item pi ON pi.paragraph_id = par.id
               JOIN patch pp ON pp.id = pi.patch_id
               JOIN article art ON art.patch_id = pp.id
               JOIN article_score s ON s.article_id = art.id
               JOIN group_member gm ON (gm.group_item_id, gm.local_id) = (art.group_id, art.group_member_id)
-              JOIN article react ON react.kind = 'reaction' AND react.reply_guid = art.guid
-              JOIN patch_item rpi ON rpi.patch_id = react.patch_id AND rpi.rank = 1
-              JOIN paragraph rpar ON rpi.paragraph_id = rpar.id
+              LEFT OUTER JOIN article react ON react.kind IN ('reaction', 'agreement') AND react.reply_guid = art.guid
+              LEFT OUTER JOIN article_member_score rs ON rs.article_id = react.id AND rs.group_guid = '${root_guid}' AND rs.score <> rs.default_score
+              LEFT OUTER JOIN patch_item rpi ON rpi.patch_id = react.patch_id AND rpi.rank = 1
+              LEFT OUTER JOIN paragraph rpar ON rpi.paragraph_id = rpar.id
       WHERE   s.group_guid = '${root_guid}'
               AND art.guid ${ ref_guid ? `= '${ref_guid}'` : 'IS NULL'}
+      GROUP BY par.guid, art.guid
       ORDER BY art.timestamp DESC, pi.rank ASC
     `)
 
@@ -63,12 +59,14 @@
     }
 
     for(let row of rows) {
+      if (!row[guid]) continue
+
       art.guid = row[guid]
       art.timestamp = row[timestamp]
       art.date = parse_julian(row[timestamp]).date,
       art.nick = row[nick]
       art.score = row[score]
-      art.reactions = join_reactions(row[reactions])
+      art.reactions = JSON.parse(row[reactions])
       if (art.title == null) art.title = row[text]
       art.paragraphs.push([row[style], row[text], row[p_guid]])
     }
@@ -81,22 +79,24 @@
       score = 6, reactions = 7
     let { rows } = await disputatio_query(`
       SELECT  art.guid, art.timestamp, par.style, par.text, par.guid,
-              gm.nickname, s.score, json_group_object(rpar.id || '/' || react.group_member_id, rpar.text) reactions
+              gm.nickname, s.score,
+              json_group_array(json_object(
+                'id', react.guid, 'react', rpar.text, 'kind', react.kind,
+                'member', rs.member_id, 'score', rs.score - rs.default_score)) reactions
       FROM    paragraph par
               JOIN patch_item pi ON pi.paragraph_id = par.id
               JOIN patch pp ON pp.id = pi.patch_id
               JOIN article art ON art.patch_id = pp.id
               JOIN article_score s ON s.article_id = art.id
               JOIN group_member gm ON (gm.group_item_id, gm.local_id) = (art.group_id, art.group_member_id)
-              -- JOIN patch_item pi1 ON pi1.patch_id = pp.id AND pi1.rank = 1
-              -- JOIN paragraph par1 ON par1.id = pi1.paragraph_id
-              JOIN article react ON react.kind = 'reaction' AND react.reply_guid = art.guid AND react.group_guid = art.group_guid
-              JOIN patch_item rpi ON rpi.patch_id = react.patch_id AND rpi.rank = 1
-              JOIN paragraph rpar ON rpi.paragraph_id = rpar.id
+              LEFT OUTER JOIN article react ON react.kind IN ('reaction', 'agreement') AND react.reply_guid = art.guid
+              LEFT OUTER JOIN article_member_score rs ON rs.article_id = react.id AND rs.group_guid = '${root_guid}' AND rs.score <> rs.default_score
+              LEFT OUTER JOIN patch_item rpi ON rpi.patch_id = react.patch_id AND rpi.rank = 1
+              LEFT OUTER JOIN paragraph rpar ON rpi.paragraph_id = rpar.id
       WHERE   s.group_guid = '${root_guid}'
               AND art.reply_guid ${ ref_guid ? `= '${ref_guid}'` : 'IS NULL'}
               AND art.kind = 'topic'
-              -- AND par1.style = '+h1'
+      GROUP BY par.guid, art.guid
       ORDER BY art.timestamp DESC, pi.rank ASC
     `)
 
@@ -105,6 +105,8 @@
     // console.log(rows)
 
     for(let row of rows) {
+      if (!row[guid]) continue
+
       let art = res[res.length-1]
       if (row[guid] != art?.guid) {
         art = {
@@ -113,7 +115,7 @@
           date: parse_julian(row[timestamp]).date,
           nick: row[nick],
           score: row[score],
-          reactions: join_reactions(row[reactions]),
+          reactions: JSON.parse(row[reactions]),
           paragraphs: []
         }
         res.push(art)
@@ -306,6 +308,10 @@
     <article class="head topic">
       {@html to_html($ref_topic.paragraphs)}
       <p class="topic metadata-nick">—&nbsp;{$ref_topic.nick}</p>
+      <p class="topic metadata-reactions">
+        <ArtVote group_guid={root_guid} ref_guid={$ref_topic.guid} reactions={$ref_topic.reactions} member={$info?.member} group={$info?.group} />
+        <ArtReaction group_guid={root_guid} ref_guid={$ref_topic.guid} reactions={$ref_topic.reactions} member={$info?.member} />
+      </p>
       <p class="topic metadata">
         {format_date_time($ref_topic.timestamp)} |
         <ArtPts pts={$ref_topic.score} group_guid={root_guid} article_guid={ref_guid} />
@@ -318,7 +324,8 @@
       <p><a href="#{url_prefix}/r/{topic.guid}/" class="open-topic"><SvgIcon type='mdi' path={mdi.mdiArrowRightBold} /></a></p>
       <p class="topic metadata-nick">—&nbsp;{topic.nick}</p>
       <p class="topic metadata-reactions">
-        <ArtNewReaction group_guid={root_guid} ref_guid={topic.guid} reactions={topic.reactions} />
+        <ArtVote group_guid={root_guid} ref_guid={topic.guid} reactions={topic.reactions} member={$info?.member} group={$info?.group} />
+        <ArtReaction group_guid={root_guid} ref_guid={topic.guid} reactions={topic.reactions} member={$info?.member} />
       </p>
       <p class="topic metadata">
         {format_date_time(topic.timestamp)} |
