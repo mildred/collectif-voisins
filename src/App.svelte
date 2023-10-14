@@ -5,6 +5,7 @@
 
   import Welcome from './Welcome.svelte'
   import City from './City.svelte'
+  import Group from './Group.svelte'
 
 </script>
 
@@ -22,6 +23,9 @@
   <Route path="/c/:city/*" let:meta>
     <City code={meta.params.city.split('-')[0]} name={decodeURI(meta.params.city.replace(/^[^-]*-/, ''))}/>
   </Route>
+  <Route path="/g/:group_guid/*" let:meta>
+    <Group guid={meta.params.group_guid}/>
+  </Route>
   <Route>
     <Welcome/>
   </Route>
@@ -32,6 +36,20 @@
   <summary>TODO</summary>
   <ul>
     <li>Gérer le logout.</li>
+    <li>Sur la page d'un groupe public, ne pas afficher de contenu mais proposer
+    une liste de groupes de modération (collectif = même groupe que le contenu,
+    et tous les groupes à accès restreint). Proposer de créer ou rejoindre un
+    groupe de modération.</li>
+    <li>Le contenu est affiché uniquement lorsque le groupe de modération est
+    choisi, le contenu avec un vote &lt;= 0 est caché (sauf si l'utilisateur est
+    membre du groupe et qu'il choisit de passer en mode modération). Le contenu
+    affiché correspond aux articles postés sur le groupe public avec la
+    modération appliquée sur le groupe de modération.</li>
+    <li>Les réactions et votes correspondent au groupe public</li>
+    <li>Une option disponible à tous (même si pas de login) pour afficher les
+      réactions et votes présents sur les groupes de modération. En ce cas, si
+      on vote ou réagit, les réactions sont enregistrées sur le groupe de
+      modération, si on est membre bien sûr.</li>
     <li>Cacher les topics jusqu'à ce qu'une tierce personne vote pour eux</li>
     <li>Modifier le default score de groupe pour être à 0 (comme ça un
       topic/commentaire commence avec 1pts et non pas 2pts</li>

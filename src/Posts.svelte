@@ -292,7 +292,14 @@
         </center>
       {:else if $info.member}
         <p>Vous êtes membre de la communauté de {$info.group.n} en tant que
-        {$info.member.nick}.</p>
+        {$info.member.nick}. Vous participez à la modération collective et vous
+        avez une obligation légale de bloquer le contenu inapproprié selon les
+        lois que vous impose votre juridiction. Cette modération reste
+        vulnérable aux attaques de trolls.</p>
+
+        <p>Vous n'êtes pas membre d'un groupe de modération restreint (protégé
+          des attaques de trolls). Faites vous inviter ou créez un groupe pour
+          participer à la modération.</p>
       {:else}
         <p>Vous n'avez pas encore rejoint la communauté de {$info.group.n}</p>
         {#if $session.email}
@@ -301,6 +308,27 @@
           <p>Connectez-vous pour ensuite rejoindre la communauté.</p>
         {/if}
       {/if}
+    </div>
+    <div>
+      <p>Afficher la modération&nbsp;:
+        <select>
+          <option>🔓 collective</option>
+          <!-- 🔒 afficher les autres groupes de modération -->
+          <option disabled>🔒 Nouveau groupe de modération...</option>
+        </select>
+        réactions et votes&nbsp;:
+        <select>
+          <option>🔓 du public</option>
+          <!-- afficher les autres groupes de modération -->
+        </select>
+      </p>
+      <p><em>Attention&nbsp;: si vous choisissez de visualiser le contenu modéré
+          collectivement, vous devez éventuellement vous attendre a voir du
+          contenu inapproprié le temps que la communauté puisse le modérer. Si
+          la comunauté est infiltrée par de trop nombreux trolls, il est
+          possible qu'elle ne puisse plus effectuer une modération correcte.
+          Vous devriez toujours préférer une communauté de modération restreinte
+          qui soit capable d'imposer ses règles en cas d'attaques de trolls.</em></p>
     </div>
   </section>
   <section class="topics">

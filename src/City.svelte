@@ -37,30 +37,11 @@
 
 </script>
 
-<style>
-  nav.center {
-    padding: 1rem;
-    display: flex;
-    flex-flow: column nowrap;
-    align-items: center;
-    justify-content: center;
-  }
-  nav.center h1 {
-    text-align: center;
-    max-width: 60rem;
-  }
-  .account {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-  }
-</style>
-
 <nav class="center">
   <div class="account">
     <Login />
   </div>
-  <h1>Commune de {name}</h1>
+  <h1><a href="#/g/{$root_guid}">Commune de {name}</a></h1>
   <!-- {code} {$root_guid} -->
 </nav>
 
@@ -98,4 +79,27 @@
 
   </Route>
 {/if}
+
+<style>
+  h1 a {
+    text-decoration: none;
+    color: currentcolor;
+  }
+  nav.center {
+    padding: 1rem;
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: center;
+  }
+  nav.center h1 {
+    text-align: center;
+    max-width: 60rem;
+  }
+  .account {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+  }
+</style>
 
